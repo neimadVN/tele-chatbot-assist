@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { FunctionCall, WeatherParams, SearchParams, GoldPriceParams } from '../types';
+import { WeatherParams, SearchParams, GoldPriceParams } from '../types';
 import { getWeather } from './weatherService';
 import { searchWeb } from './tavilyService';
 import { getGoldPrices } from './goldPriceService';
