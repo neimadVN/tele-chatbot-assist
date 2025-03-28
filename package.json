@@ -4,6 +4,7 @@
   "description": "A terminal-based chatbot using OpenAI's Assistant API with function calling capabilities",
   "main": "dist/index.js",
   "scripts": {
+    "main": "node dist/index.js",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
