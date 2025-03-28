@@ -118,6 +118,33 @@ if (telegramToken) {
   console.log(`${colors.yellow}TELEGRAM_BOT_TOKEN not found, Telegram bot will not start${colors.reset}`);
 }
 
+// Handle process termination gracefully
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  shutdown();
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  shutdown();
+});
+
+// Graceful shutdown function
+function shutdown() {
+  console.log('Closing readline interface');
+  rl.close();
+  
+  if (bot) {
+    console.log('Stopping Telegram bot');
+    bot.stopPolling();
+  }
+  
+  console.log('Exiting process');
+  setTimeout(() => {
+    process.exit(0);
+  }, 1000);
+}
+
 // Start the CLI chatbot
 async function startCliChatbot() {
   console.log(`${colors.green}===================================${colors.reset}`);
@@ -197,4 +224,5 @@ function formatResponse(content: any): string {
 startCliChatbot().catch(error => {
   console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
   rl.close();
+  process.exit(1);
 }); 
