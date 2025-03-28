@@ -12,11 +12,11 @@ if (!process.env.OPENAI_API_KEY || !process.env.ASSISTANT_ID) {
   process.exit(1);
 }
 
-// Create interface for reading from console
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// Check if running under PM2
+const isPM2 = typeof process.env.pm_id !== 'undefined' || 
+              process.env.NODE_APP_INSTANCE !== undefined || 
+              process.env.PM2_HOME !== undefined;
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ANSI color codes for formatting
 const colors = {
@@ -27,6 +27,12 @@ const colors = {
   yellow: '\x1b[33m',
   red: '\x1b[31m'
 };
+
+console.log(`${colors.green}Running in ${isProduction ? 'production' : 'development'} mode${colors.reset}`);
+console.log(`${colors.green}Running under PM2: ${isPM2 ? 'Yes' : 'No'}${colors.reset}`);
+
+// Create readline interface only when needed
+let rl: readline.Interface | null = null;
 
 // Telegram bot setup
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -131,8 +137,10 @@ process.on('SIGINT', () => {
 
 // Graceful shutdown function
 function shutdown() {
-  console.log('Closing readline interface');
-  rl.close();
+  if (rl) {
+    console.log('Closing readline interface');
+    rl.close();
+  }
   
   if (bot) {
     console.log('Stopping Telegram bot');
@@ -145,8 +153,30 @@ function shutdown() {
   }, 1000);
 }
 
+// Format the assistant's response
+function formatResponse(content: any): string {
+  if (Array.isArray(content)) {
+    return content
+      .map(item => {
+        if (item.type === 'text') {
+          return item.text.value;
+        }
+        return '';
+      })
+      .join('\n');
+  }
+  
+  return String(content);
+}
+
 // Start the CLI chatbot
 async function startCliChatbot() {
+  // Create readline interface for CLI
+  rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  
   console.log(`${colors.green}===================================${colors.reset}`);
   console.log(`${colors.blue}OpenAI Assistant Chatbot${colors.reset}`);
   console.log(`${colors.green}===================================${colors.reset}`);
@@ -192,37 +222,34 @@ async function startCliChatbot() {
     console.log(`${colors.green}===================================${colors.reset}`);
   }
   
+  // We know rl is not null here since we created it at the start of this function
   rl.close();
 }
 
 // Function to ask a question and get user input
 function askQuestion(prompt: string): Promise<string> {
   return new Promise((resolve) => {
+    // We can assert rl is not null here since this is only called from startCliChatbot
+    // after rl has been initialized
+    if (!rl) {
+      throw new Error('Readline interface not initialized');
+    }
     rl.question(prompt, (answer) => {
       resolve(answer);
     });
   });
 }
 
-// Format the assistant's response
-function formatResponse(content: any): string {
-  if (Array.isArray(content)) {
-    return content
-      .map(item => {
-        if (item.type === 'text') {
-          return item.text.value;
-        }
-        return '';
-      })
-      .join('\n');
-  }
-  
-  return String(content);
-}
-
-// Start the CLI chatbot
-startCliChatbot().catch(error => {
-  console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
-  rl.close();
-  process.exit(1);
-}); 
+// Only start CLI mode if not running under PM2
+if (!isPM2) {
+  // Start the CLI chatbot
+  startCliChatbot().catch(error => {
+    console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
+    if (rl) {
+      rl.close();
+    }
+    process.exit(1);
+  });
+} else {
+  console.log(`${colors.green}Running under PM2. CLI chatbot disabled.${colors.reset}`);
+} 

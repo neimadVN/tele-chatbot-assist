@@ -9,6 +9,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
+        PM2_HOME: '/home/pm2',
       },
       env_production: {
         NODE_ENV: 'production',
@@ -24,7 +25,13 @@ module.exports = {
       // Merge out and error logs
       merge_logs: true,
       // Time format in logs
-      time: true
+      time: true,
+      // Ignore watch for node_modules and logs folders
+      ignore_watch: ["node_modules", "logs"],
+      // Wait before forcing a restart
+      kill_timeout: 3000,
+      // Wait before restarting app
+      restart_delay: 2000,
     },
   ]
 }; 
