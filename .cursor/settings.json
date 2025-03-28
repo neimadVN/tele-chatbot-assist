@@ -1,0 +1,7 @@
+{
+  "ai": {
+    "codeGenerationPreference": "focusOnCode",
+    "commentStyle": "minimal",
+    "extraInstructions": "Focus on generating working code instead of providing detailed explanations. Use TypeScript for all code generation. Implement functionality directly rather than explaining concepts."
+  }
+} 
